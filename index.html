@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Streak: reminders and daily challenges</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F2F2;--card:#fff;--ink:#1A1214;--mute:#6F6366;--line:#E0DADB;--acc:#DC143C;--accT:#fff;--ok:#DC143C;--bad:#B7791F;--soft:#EBE6E7;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140C0E;--card:#1F1417;--ink:#F3EAEC;--mute:#A8949A;--line:#3A2529;--acc:#E8294F;--accT:#fff;--ok:#E8294F;--bad:#E0A84A;--soft:#2B1A1E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#140C0E;--card:#1F1417;--ink:#F3EAEC;--mute:#A8949A;--line:#3A2529;--acc:#E8294F;--accT:#fff;--ok:#E8294F;--bad:#E0A84A;--soft:#2B1A1E;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Manrope,system-ui,sans-serif}
+.app{max-width:640px;margin:0 auto;padding:20px 16px 56px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1,h2,.big{font-family:Syne,Manrope,sans-serif;margin:0}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+h2{font-size:18px;font-weight:600;margin:28px 0 10px}
+.date{color:var(--mute);margin:2px 0 0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.ghost{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--mute);font-size:14px}
+nav{display:flex;gap:4px;background:var(--soft);border-radius:12px;padding:4px;margin:18px 0 4px}
+nav button{flex:1;border:0;background:none;border-radius:9px;padding:9px;font-weight:600;color:var(--mute)}
+nav button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,30,60,.12)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text],input[type=date],input[type=time],input[type=number],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:110px;resize:vertical}
+.row>*{flex:1 1 130px}
+.row .fit{flex:0 0 auto}
+.primary{background:var(--acc);color:var(--accT);border:0;border-radius:10px;padding:10px 18px;font-weight:600}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--mute);font-size:14px}
+.rule,.task{display:flex;gap:12px;align-items:center;padding:10px 4px;border-top:1px solid var(--line)}
+.rule:first-of-type,.task:first-child{border-top:0}
+input[type=checkbox]{appearance:none;flex:0 0 24px;width:24px;height:24px;border:2px solid var(--mute);border-radius:7px;margin:0;display:grid;place-content:center;cursor:pointer;background:none}
+input[type=checkbox]:checked{background:var(--ok);border-color:var(--ok)}
+input[type=checkbox]:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.task span.t{flex:1}
+.task.done span.t,.rule:has(:checked) span{color:var(--mute);text-decoration:line-through}
+.meta{font-size:13px;color:var(--mute)}
+.tag{display:inline-block;font-size:12px;border-radius:6px;padding:1px 7px;background:var(--soft);color:var(--mute);margin-left:6px}
+.tag.late{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.x{background:none;border:0;color:var(--mute);font-size:20px;line-height:1;padding:4px 8px;flex:0 0 auto}
+.hero{display:flex;align-items:baseline;gap:10px}
+.big{font-size:clamp(64px,19vw,104px);font-weight:800;line-height:.95;letter-spacing:-.04em}
+.of{color:var(--mute);font-weight:600}
+.cname{font-weight:600;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15px,1fr));gap:4px;margin:14px 0}
+.grid i{aspect-ratio:1;border-radius:4px;background:var(--soft)}
+.grid i.d{background:var(--ok)}.grid i.m{background:var(--bad);opacity:.85}.grid i.n{outline:2px solid var(--acc);outline-offset:1px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--mute)}
+.stats b{color:var(--ink);font-size:18px;font-family:Syne,sans-serif}
+.empty{color:var(--mute);padding:6px 0}
+.fin{color:var(--ok);font-weight:600}
+#toasts{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;z-index:9}
+.toast{pointer-events:auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 16px;max-width:420px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;animation:up .25s ease-out}
+.toast b{display:block}.toast button{margin-left:auto;background:none;border:0;color:inherit;font-size:20px}
+@keyframes up{from{transform:translateY(12px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+[hidden]{display:none!important}
+details summary{cursor:pointer;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+.stack>*+*{margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div><h1>Streak</h1><p class="date" id="today-label"></p></div>
+    <button class="ghost" id="alerts" data-a="alerts">Turn on alerts</button>
+  </header>
+  <nav><button class="on" data-a="tab" data-t="today">Today</button><button data-a="tab" data-t="ch">Challenges</button></nav>
+
+  <section id="v-today">
+    <div id="today-ch"></div>
+    <h2>To-do</h2>
+    <div class="card stack">
+      <input type="text" id="t-title" placeholder="What needs doing?" maxlength="120">
+      <div class="row">
+        <input type="date" id="t-date" aria-label="Date">
+        <input type="time" id="t-time" aria-label="Remind me at">
+        <button class="primary fit" data-a="addTask">Add task</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="t-rep"> Repeat every day</label>
+    </div>
+    <div id="tasks"></div>
+    <div id="upcoming"></div>
+  </section>
+
+  <section id="v-ch" hidden>
+    <details class="card" id="newch">
+      <summary>Start a new challenge</summary>
+      <div class="stack" style="margin-top:12px">
+        <select id="c-pre" aria-label="Template">
+          <option value="hard">75 Hard</option><option value="soft">75 Soft</option><option value="custom">My own</option>
+        </select>
+        <div class="row">
+          <input type="text" id="c-name" placeholder="Challenge name" maxlength="40">
+          <input type="number" id="c-days" min="1" max="365" aria-label="Number of days" style="flex:0 1 110px">
+        </div>
+        <textarea id="c-rules" aria-label="Daily rules, one per line" placeholder="One daily rule per line"></textarea>
+        <div class="row">
+          <label class="chk"><input type="checkbox" id="c-strict"> Restart at day 1 if I miss a day</label>
+          <label class="chk fit">Remind me at <input type="time" id="c-remind" style="width:auto"></label>
+        </div>
+        <button class="primary" data-a="addCh">Start today</button>
+      </div>
+    </details>
+    <div id="chs"></div>
+  </section>
+  <p class="meta" style="margin-top:28px">Reminders pop up while this page is open. Data stays in this browser.</p>
+</div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+const K='streak-v1';
+let S={tasks:[],ch:[],fired:{}};
+try{const r=localStorage.getItem(K);if(r)Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>dstr(new Date());
+const nowHM=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return dstr(d)};
+const diff=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+const PRE={
+ hard:{name:'75 Hard',days:75,strict:true,rules:['Robotics','Books','Water','Workout','Journal','Market']},
+ soft:{name:'75 Soft',days:75,strict:false,rules:['Eat well','Workout for 45 minutes','Drink 3 litres of water','Read 10 pages']},
+ custom:{name:'',days:30,strict:false,rules:[]}
+};
+function fillPre(){const p=PRE[$('#c-pre').value];$('#c-name').value=p.name;$('#c-days').value=p.days;$('#c-strict').checked=p.strict;$('#c-rules').value=p.rules.join('\n')}
+
+/* challenges */
+const dayDone=(c,d)=>c.rules.length>0&&(c.log[d]||[]).length===c.rules.length;
+function info(c){
+  const t=today(),n=diff(c.start,t)+1;let done=0,st=0;
+  for(let i=0;i<c.days;i++){const d=addDays(c.start,i);if(d>t)break;if(dayDone(c,d))done++}
+  let d=dayDone(c,t)?t:addDays(t,-1);
+  while(d>=c.start&&dayDone(c,d)){st++;d=addDays(d,-1)}
+  return{n,done,st,fin:n>c.days}
+}
+function checkStrict(){
+  const t=today();
+  for(const c of S.ch){
+    if(!c.strict)continue;
+    const last=Math.min(diff(c.start,t),c.days);
+    for(let i=0;i<last;i++){
+      if(!dayDone(c,addDays(c.start,i))){
+        c.start=t;c.log={};c.tries=(c.tries||1)+1;
+        toast('Missed a day','“'+c.name+'” restarted at Day 1. Attempt '+c.tries+'.');break;
+      }
+    }
+  }
+  save();
+}
+function rulesHtml(c){
+  const L=c.log[today()]||[];
+  return c.rules.map((r,i)=>`<label class="rule"><input type="checkbox" data-a="rule" data-c="${c.id}" data-i="${i}" ${L.includes(i)?'checked':''}><span>${esc(r)}</span></label>`).join('');
+}
+function renderToday(){
+  const act=S.ch.filter(c=>!info(c).fin);
+  $('#today-ch').innerHTML=act.map(c=>{
+    const i=info(c),L=(c.log[today()]||[]).length;
+    return `<div class="card"><div class="cname">${esc(c.name)} <span class="tag">Day ${i.n} of ${c.days}</span><span class="tag">${L}/${c.rules.length} done</span></div>${rulesHtml(c)}</div>`;
+  }).join('');
+  const t=today();
+  const isDone=(k,d)=>k.repeat?!!(k.doneOn&&k.doneOn[d]):k.done;
+  const byTime=(a,b)=>(a.time||'99').localeCompare(b.time||'99');
+  const due=S.tasks.filter(k=>k.repeat||!k.date||k.date<=t).sort((a,b)=>isDone(a,t)-isDone(b,t)||byTime(a,b));
+  const later=S.tasks.filter(k=>!k.repeat&&k.date>t).sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b));
+  const row=k=>{
+    const d=isDone(k,t),late=!k.repeat&&k.date&&k.date<t&&!d;
+    return `<div class="task ${d?'done':''}"><input type="checkbox" data-a="task" data-id="${k.id}" ${d?'checked':''} aria-label="Done"><span class="t">${esc(k.title)}${k.time?`<span class="tag">${k.time}</span>`:''}${k.repeat?'<span class="tag">Daily</span>':''}${late?'<span class="tag late">Overdue</span>':''}${k.date>t?`<span class="tag">${k.date}</span>`:''}</span><button class="x" data-a="delTask" data-id="${k.id}" aria-label="Delete task">×</button></div>`;
+  };
+  $('#tasks').innerHTML=due.length?`<div class="card">${due.map(row).join('')}</div>`:'<p class="empty">Nothing due. Add a task above and set a time to get a reminder.</p>';
+  $('#upcoming').innerHTML=later.length?`<h2>Coming up</h2><div class="card">${later.map(row).join('')}</div>`:'';
+}
+let sure=null;
+function renderCh(){
+  const t=today();
+  $('#chs').innerHTML=S.ch.length?S.ch.map(c=>{
+    const i=info(c);
+    let g='';
+    for(let k=0;k<c.days;k++){
+      const d=addDays(c.start,k);
+      const cls=dayDone(c,d)?'d':(d<t?'m':'');
+      g+=`<i class="${cls} ${d===t?'n':''}" title="Day ${k+1}"></i>`;
+    }
+    const head=i.fin?`<div class="fin">Complete: ${i.done} of ${c.days} days</div>`:`<div class="hero"><span class="big">${i.n}</span><span class="of">of ${c.days}</span></div>`;
+    return `<div class="card"><div class="cname">${esc(c.name)}${c.strict?'<span class="tag">Strict</span>':''}${c.remind?`<span class="tag">Reminder ${c.remind}</span>`:''}</div>${head}<div class="grid" aria-hidden="true">${g}</div><div class="stats"><span><b>${i.done}</b> days done</span><span><b>${i.st}</b> day streak</span><span><b>${c.tries||1}</b> ${(c.tries||1)>1?'attempts':'attempt'}</span></div>${i.fin?'':`<div style="margin-top:12px">${rulesHtml(c)}</div>`}<div style="margin-top:12px"><button class="ghost" data-a="delCh" data-id="${c.id}">${sure===c.id?'Tap again to delete':'Delete challenge'}</button></div></div>`;
+  }).join(''):'<p class="empty">No challenges yet. Open “Start a new challenge” and pick 75 Hard or make your own.</p>';
+}
+const render=()=>{renderToday();renderCh()};
+
+/* reminders */
+let actx;
+function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.18)}catch(e){}}
+function toast(title,body){
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<div><b>${esc(title)}</b>${esc(body||'')}</div><button aria-label="Dismiss">×</button>`;
+  el.querySelector('button').onclick=()=>el.remove();
+  $('#toasts').appendChild(el);setTimeout(()=>el.remove(),15000);
+}
+function fire(title,body){
+  toast(title,body);beep();
+  try{if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body})}catch(e){}
+}
+let lastDay=today();
+function tick(){
+  const t=today(),hm=nowHM();
+  if(t!==lastDay){lastDay=t;checkStrict();render();$('#today-label').textContent=label()}
+  for(const k of S.tasks){
+    const d=k.repeat?!!(k.doneOn&&k.doneOn[t]):k.done;
+    if(d||!k.time||!(k.repeat||k.date===t)||hm<k.time)continue;
+    const key=k.id+t;if(S.fired[key])continue;
+    S.fired[key]=1;fire('Time for: '+k.title,'Due at '+k.time);
+  }
+  for(const c of S.ch){
+    if(!c.remind||hm<c.remind||dayDone(c,t))continue;
+    const i=info(c);if(i.fin)continue;
+    const key=c.id+t;if(S.fired[key])continue;
+    S.fired[key]=1;fire(c.name+': Day '+i.n,(c.rules.length-(c.log[t]||[]).length)+' rules left today');
+  }
+  const keep={};for(const k in S.fired)if(k.endsWith(t))keep[k]=1;S.fired=keep;save();
+}
+function alertsUi(){
+  const b=$('#alerts');
+  if(!('Notification'in window)){b.hidden=true;return}
+  b.textContent=Notification.permission==='granted'?'Alerts on':'Turn on alerts';
+  b.disabled=Notification.permission==='granted';
+}
+const label=()=>new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+
+/* actions */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a;
+  try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)()}catch(x){}
+  if(a==='tab'){
+    document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('on',n===b));
+    $('#v-today').hidden=b.dataset.t!=='today';$('#v-ch').hidden=b.dataset.t!=='ch';
+  }else if(a==='alerts'){
+    try{Notification.requestPermission().then(alertsUi)}catch(x){}
+    toast('Alerts','If your browser blocks pop-ups, reminders still show here.');
+  }else if(a==='addTask')addTask();
+  else if(a==='addCh')addCh();
+  else if(a==='delTask'){S.tasks=S.tasks.filter(k=>k.id!==b.dataset.id);save();render()}
+  else if(a==='delCh'){
+    if(sure===b.dataset.id){S.ch=S.ch.filter(c=>c.id!==sure);sure=null;save();render()}
+    else{sure=b.dataset.id;renderCh()}
+  }
+});
+document.addEventListener('change',e=>{
+  const b=e.target;if(!b.dataset)return;
+  if(b.dataset.a==='task'){
+    const k=S.tasks.find(x=>x.id===b.dataset.id),t=today();
+    if(k.repeat){k.doneOn=k.doneOn||{};k.doneOn[t]=b.checked}else k.done=b.checked;
+    save();render();
+  }else if(b.dataset.a==='rule'){
+    const c=S.ch.find(x=>x.id===b.dataset.c),t=today(),i=+b.dataset.i;
+    let L=(c.log[t]||[]).filter(x=>x!==i);if(b.checked)L.push(i);
+    c.log[t]=L;save();render();
+    if(b.checked&&dayDone(c,t)){const n=info(c);toast(n.fin?'Challenge complete':'Day '+n.n+' done',n.fin?'You finished '+c.name+'.':'Streak: '+n.st+(n.st===1?' day':' days'))}
+  }else if(b.id==='c-pre')fillPre();
+});
+function addTask(){
+  const title=$('#t-title').value.trim();
+  if(!title){$('#t-title').focus();return}
+  S.tasks.push({id:uid(),title,date:$('#t-date').value||today(),time:$('#t-time').value,repeat:$('#t-rep').checked,done:false,doneOn:{}});
+  $('#t-title').value='';$('#t-time').value='';$('#t-rep').checked=false;
+  save();render();tick();
+}
+function addCh(){
+  const name=$('#c-name').value.trim(),days=Math.min(365,Math.max(1,+$('#c-days').value||0)),
+    rules=$('#c-rules').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!name||!rules.length){toast('Add a name and rules','Each challenge needs a name and at least one daily rule.');return}
+  S.ch.push({id:uid(),name,days,rules,strict:$('#c-strict').checked,remind:$('#c-remind').value,start:today(),log:{},tries:1});
+  save();$('#newch').open=false;render();
+  toast('Challenge started',name+': Day 1 of '+days+'. Tick off today’s rules on the Today tab.');
+}
+$('#t-title').addEventListener('keydown',e=>{if(e.key==='Enter')addTask()});
+$('#t-date').value=today();
+$('#today-label').textContent=label();
+fillPre();checkStrict();render();alertsUi();tick();setInterval(tick,20000);
+</script>
+</body>
+</html>
